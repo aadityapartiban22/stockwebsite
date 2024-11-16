@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Overview</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+            background: linear-gradient(to right, #1f4037, #99f2c8);
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+        input {
+            display: block;
+            margin: 10px auto;
+            padding: 10px;
+            width: 90%;
+            max-width: 400px;
+            font-size: 16px;
+            border: 2px solid #0c7489;
+            border-radius: 5px;
+            outline: none;
+        }
+        input:focus {
+            border-color: #3cd0c9;
+            box-shadow: 0 0 5px #3cd0c9;
+        }
+        #suggestions {
+            max-width: 400px;
+            margin: 10px auto;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .suggestion-item:hover {
+            background-color: #f0f0f0;
+        }
+        #overview {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: left;
+        }
+        #overview h2 {
+            color: #0c7489;
+            border-bottom: 2px solid #3cd0c9;
+            padding-bottom: 5px;
+        }
+        .error {
+            color: #ff4c4c;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Company Overview</h1>
+    <input 
+        aria-label="Search for a company"
+        type="search"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="Search for a company"
+        id="search-input"
+        class="u-full-width">
+    <div id="suggestions"></div>
+    <div id="overview"></div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const searchInput = document.getElementById('search-input');
+            const suggestionsContainer = document.getElementById("suggestions");
+            const overviewDiv = document.getElementById('overview');
+            const apiKey = 'E1LWVJIJFLRA9VWJ';
+
+            searchInput.addEventListener("input", async function () {
+                const query = searchInput.value.trim();
+                if (query.length < 1) {
+                    suggestionsContainer.innerHTML = ''; // Clear suggestions if input is empty
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${query}&apikey=${apiKey}`);
+                    const data = await response.json();
+
+                    if (data.bestMatches && data.bestMatches.length > 0) {
+                        suggestionsContainer.innerHTML = '';
+                        data.bestMatches.forEach(match => {
+                            const symbol = match['1. symbol'];
+                            const name = match['2. name'];
+
+                            const suggestionItem = document.createElement("div");
+                            suggestionItem.classList.add("suggestion-item");
+                            suggestionItem.innerText = `${name} (${symbol})`;
+                            suggestionItem.addEventListener("click", function () {
+                                searchInput.value = symbol;
+                                suggestionsContainer.innerHTML = ''; // Clear suggestions
+                                fetchOverview(symbol); // Fetch and display stock overview for selected symbol
+                            });
+                            suggestionsContainer.appendChild(suggestionItem);
+                        });
+                    } else {
+                        suggestionsContainer.innerHTML = '<p>No matches found</p>';
+                    }
+                } catch (error) {
+                    console.error('Error fetching suggestions:', error);
+                }
+            });
+
+            async function fetchOverview(symbol) {
+                const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${symbol}&apikey=${apiKey}`;
+                
+                overviewDiv.innerHTML = ''; // Clear previous data
+                
+                if (!symbol) {
+                    overviewDiv.innerHTML = '<p class="error">Please enter a stock symbol.</p>';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`Error: ${response.statusText}`);
+                    }
+                    const data = await response.json();
+
+                    if (Object.keys(data).length === 0 || data.Note) {
+                        overviewDiv.innerHTML = '<p class="error">No data available. Check your API limit or symbol.</p>';
+                        return;
+                    }
+
+                    overviewDiv.innerHTML = `
+                        <h2>${data.Name} (${data.Symbol})</h2>
+                        <p><strong>Description:</strong> ${data.Description}</p>
+                        <p><strong>Sector:</strong> ${data.Sector}</p>
+                        <p><strong>Industry:</strong> ${data.Industry}</p>
+                        <p><strong>Market Capitalization:</strong> $${Number(data.MarketCapitalization).toLocaleString()}</p>
+                        <p><strong>Website:</strong> <a href="${data.OfficialSite}" target="_blank">${data.OfficialSite}</a></p>
+                    `;
+                } catch (error) {
+                    overviewDiv.innerHTML = `<p class="error">${error.message}</p>`;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

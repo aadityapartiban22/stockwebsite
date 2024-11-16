@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Overview</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+            background: linear-gradient(to right, #1f4037, #99f2c8);
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+        label, input, button {
+            display: block;
+            margin: 10px auto;
+            width: 90%;
+            max-width: 400px;
+        }
+        label {
+            color: #fff;
+            font-size: 18px;
+            text-align: left;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #0c7489;
+            border-radius: 5px;
+            outline: none;
+        }
+        input:focus {
+            border-color: #3cd0c9;
+            box-shadow: 0 0 5px #3cd0c9;
+        }
+        button {
+            padding: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: #0c7489;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #3cd0c9;
+        }
+        #overview {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: left;
+        }
+        #overview h2 {
+            color: #0c7489;
+            border-bottom: 2px solid #3cd0c9;
+            padding-bottom: 5px;
+        }
+        #overview p {
+            margin: 10px 0;
+        }
+        #overview a {
+            color: #0c7489;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        #overview a:hover {
+            text-decoration: underline;
+        }
+        .error {
+            color: #ff4c4c;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Company Overview</h1>
+    <label for="symbol">Enter Stock Symbol:</label>
+    <input type="text" id="symbol" placeholder="e.g., IBM">
+    <button onclick="fetchOverview()">Get Overview</button>
+
+    <div id="overview"></div>
+
+    <script>
+        async function fetchOverview() {
+            const symbol = document.getElementById('symbol').value.trim();
+            const apiKey = 'E1LWVJIJFLRA9VWJ';
+            const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${symbol}&apikey=${apiKey}`;
+            
+            const overviewDiv = document.getElementById('overview');
+            overviewDiv.innerHTML = ''; // Clear previous data
+            
+            if (!symbol) {
+                overviewDiv.innerHTML = '<p class="error">Please enter a stock symbol.</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.statusText}`);
+                }
+                const data = await response.json();
+                
+                if (Object.keys(data).length === 0 || data.Note) {
+                    overviewDiv.innerHTML = '<p class="error">No data available. Check your API limit or symbol.</p>';
+                    return;
+                }
+                
+                overviewDiv.innerHTML = `
+                    <h2>${data.Name} (${data.Symbol})</h2>
+                    <p><strong>Description:</strong> ${data.Description}</p>
+                    <p><strong>Sector:</strong> ${data.Sector}</p>
+                    <p><strong>Industry:</strong> ${data.Industry}</p>
+                    <p><strong>Market Capitalization:</strong> $${Number(data.MarketCapitalization).toLocaleString()}</p>
+                    <p><strong>Website:</strong> <a href="${data.OfficialSite}" target="_blank">${data.OfficialSite}</a></p>
+                `;
+            } catch (error) {
+                overviewDiv.innerHTML = `<p class="error">${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
